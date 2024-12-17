@@ -44,7 +44,7 @@ The Lambda RPC Checker is a Node.js-based AWS Lambda function designed to:
 3. Ensure the `package.json` and `node_modules` are in the same directory as `check_rpc.js`.
 4. Create a zip file containing the code and dependencies:
    ```bash
-   zip -r rpc-checker.zip
+   zip -r rpc-checker.zip .
    ```
 
 ---
