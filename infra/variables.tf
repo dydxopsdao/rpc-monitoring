@@ -1,3 +1,8 @@
+variable "TFC_AWS_RUN_ROLE_ARN" {
+  type        = string
+  description = "The ARN of the IAM role for Terraform Cloud to assume"
+  default     = "arn:aws:iam::940482404144:role/tfc_workspace_role"
+}
 variable "frankfurt_region" {
   type        = string
   description = "The AWS region for Frankfurt resources"
