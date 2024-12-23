@@ -1,2 +1,18 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+
+# Node
 node_modules/
+
+# OS
 .DS_Store
+*.swp
+*.swo

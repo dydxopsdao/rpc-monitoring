@@ -1,0 +1,6 @@
+frankfurt_region           = "eu-central-1"
+frankfurt_bucket_name      = "rpc-monitor-lambda-frankfurt"
+frankfurt_lambda_name      = "rpc-monitor-lambda-frankfurt"
+frankfurt_lambda_s3_bucket = "rpc-monitor-lambda-frankfurt"
+frankfurt_lambda_layer_arn = "arn:aws:lambda:eu-central-1:940482404144:layer:chrome-aws-lambda:26"
+frankfurt_event_rule_name  = "invoke-rpc-monitor-frankfurt-every-5-minutes"
