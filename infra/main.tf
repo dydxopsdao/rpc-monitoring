@@ -19,7 +19,9 @@ terraform {
 
   required_version = "~> 1.10.3"
 }
-
+provider "aws" {
+  region = "ap-northeast-1"
+}
 provider "aws" {
   alias               = "frankfurt"
   region              = var.frankfurt_region
