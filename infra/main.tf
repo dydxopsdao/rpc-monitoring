@@ -23,17 +23,11 @@ terraform {
 provider "aws" {
   alias               = "frankfurt"
   region              = var.frankfurt_region
-  assume_role {
-  role_arn = var.TFC_AWS_RUN_ROLE_ARN
-  }
 }
 
 provider "aws" {
   alias               = "tokyo"
   region              = var.tokyo_region
-  assume_role {
-  role_arn = var.TFC_AWS_RUN_ROLE_ARN
-  }
 }
 
 module "frankfurt" {
