@@ -68,29 +68,7 @@ resource "aws_iam_role_policy_attachment" "lambda_s3" {
   policy_arn = aws_iam_policy.lambda_s3_policy.arn
 }
 
-# -----------------------------------------------------------------------------
-# Terraform Cloud Role
-# -----------------------------------------------------------------------------
-data "aws_iam_policy_document" "terraform_cloud_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${local.aws_account_id}:root"]
-    }
-  }
-}
 
-resource "aws_iam_role" "terraform_cloud_role" {
-  name               = "tfc_workspace_role"
-  assume_role_policy = data.aws_iam_policy_document.terraform_cloud_assume_role.json
-
-  tags = {
-    Name         = "terraform-cloud-role"
-    Environment  = "Production"
-    Organization = "dydxprotocol"
-  }
-}
 # -----------------------------------------------------------------------------
 # EventBridge role and permissions
 # -----------------------------------------------------------------------------
@@ -134,9 +112,4 @@ resource "aws_iam_policy" "eventbridge_lambda" {
 resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
   role       = aws_iam_role.eventbridge_role.name
   policy_arn = aws_iam_policy.eventbridge_lambda.arn
-}
-
-resource "aws_iam_role_policy_attachment" "terraform_cloud_policy" {
-  role       = aws_iam_role.terraform_cloud_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
