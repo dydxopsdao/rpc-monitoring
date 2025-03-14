@@ -4,7 +4,6 @@ const axios = require('axios');
 
 const PROVIDERS = {
     "dydx-ops-rpc.kingnodes.com": "kingnodes",
-    "dydx-mainnet-full-rpc.public.blastapi.io": "blastapi",
     "dydx-dao-rpc.polkachu.com": "polkachu",
     "dydx-dao-rpc.enigma-validator.com": "enigma"
 };
