@@ -1,6 +1,6 @@
 terraform {
   cloud {
-    organization = "dydxprotocol"
+    organization = "dydxopsdao"
     workspaces {
       name = "rpc-monitoring"
     }
