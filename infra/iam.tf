@@ -3,113 +3,62 @@
 # -----------------------------------------------------------------------------
 data "aws_caller_identity" "current" {}
 
-locals {
-  aws_account_id = data.aws_caller_identity.current.account_id
+# No longer needed here as we are looking up existing roles
+# locals {
+#   aws_account_id = data.aws_caller_identity.current.account_id
+# }
+
+# -----------------------------------------------------------------------------
+# Look up existing Lambda execution role
+# -----------------------------------------------------------------------------
+data "aws_iam_role" "lambda_exec_role" {
+  name = "rpc-monitor-lambda-role" # The exact name of the existing role
 }
 
 # -----------------------------------------------------------------------------
-# Lambda execution role policy
+# Look up existing EventBridge role
 # -----------------------------------------------------------------------------
-data "aws_iam_policy_document" "lambda_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "lambda_exec_role" {
-  name               = "rpc-monitor-lambda-role"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
-
-  tags = {
-    Name         = "rpc-monitor-lambda-role"
-    Environment  = "Production"
-    Organization = "dydxprotocol"
-  }
+data "aws_iam_role" "eventbridge_role" {
+  name = "rpc-monitor-eventbridge-role" # The exact name of the existing role
 }
 
 # -----------------------------------------------------------------------------
-# Lambda CloudWatch logging permissions
+# Ensure Lambda CloudWatch logging permissions are attached
+# (AWSLambdaBasicExecutionRole is a managed policy, we just ensure attachment)
 # -----------------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = aws_iam_role.lambda_exec_role.name
+  role       = data.aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # -----------------------------------------------------------------------------
-# Lambda S3 access policy
+# Look up existing Lambda S3 access policy
 # -----------------------------------------------------------------------------
-data "aws_iam_policy_document" "lambda_s3_policy" {
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:ListBucket"
-    ]
-    resources = [
-      "arn:aws:s3:::${var.frankfurt_bucket_name}",
-      "arn:aws:s3:::${var.frankfurt_bucket_name}/*",
-      "arn:aws:s3:::${var.tokyo_bucket_name}",
-      "arn:aws:s3:::${var.tokyo_bucket_name}/*"
-    ]
-  }
+data "aws_iam_policy" "lambda_s3_policy" {
+  # Construct the ARN using the current account ID and the known policy name
+  arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/rpc-monitor-lambda-s3-policy"
 }
 
-resource "aws_iam_policy" "lambda_s3_policy" {
-  name        = "rpc-monitor-lambda-s3-policy"
-  description = "Policy for RPC monitor Lambda to access S3"
-  policy      = data.aws_iam_policy_document.lambda_s3_policy.json
-}
-
+# -----------------------------------------------------------------------------
+# Ensure Lambda S3 policy is attached to the Lambda role
+# -----------------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "lambda_s3" {
-  role       = aws_iam_role.lambda_exec_role.name
-  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+  role       = data.aws_iam_role.lambda_exec_role.name
+  policy_arn = data.aws_iam_policy.lambda_s3_policy.arn
 }
-
 
 # -----------------------------------------------------------------------------
-# EventBridge role and permissions
+# Look up existing EventBridge Lambda invocation policy
 # -----------------------------------------------------------------------------
-data "aws_iam_policy_document" "eventbridge_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["events.amazonaws.com"]
-    }
-  }
+data "aws_iam_policy" "eventbridge_lambda" {
+  # Construct the ARN using the current account ID and the known policy name
+  arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/rpc-monitor-eventbridge-lambda"
 }
 
-resource "aws_iam_role" "eventbridge_role" {
-  name               = "rpc-monitor-eventbridge-role"
-  assume_role_policy = data.aws_iam_policy_document.eventbridge_assume_role.json
-
-  tags = {
-    Name         = "rpc-monitor-eventbridge-role"
-    Environment  = "Production"
-    Organization = "dydxprotocol"
-  }
-}
-
-data "aws_iam_policy_document" "eventbridge_lambda_policy" {
-  statement {
-    actions = ["lambda:InvokeFunction"]
-    resources = [
-      "arn:aws:lambda:${var.frankfurt_region}:${local.aws_account_id}:function:${var.frankfurt_lambda_name}",
-      "arn:aws:lambda:${var.tokyo_region}:${local.aws_account_id}:function:${var.tokyo_lambda_name}"
-    ]
-  }
-}
-
-resource "aws_iam_policy" "eventbridge_lambda" {
-  name        = "rpc-monitor-eventbridge-lambda"
-  description = "Allow EventBridge to invoke RPC monitor Lambda functions"
-  policy      = data.aws_iam_policy_document.eventbridge_lambda_policy.json
-}
-
+# -----------------------------------------------------------------------------
+# Ensure EventBridge Lambda policy is attached to the EventBridge role
+# -----------------------------------------------------------------------------
 resource "aws_iam_role_policy_attachment" "eventbridge_lambda" {
-  role       = aws_iam_role.eventbridge_role.name
-  policy_arn = aws_iam_policy.eventbridge_lambda.arn
+  role       = data.aws_iam_role.eventbridge_role.name
+  policy_arn = data.aws_iam_policy.eventbridge_lambda.arn
 }
