@@ -71,6 +71,7 @@ resource "aws_lambda_function" "lambda" {
   tags = {
     Name         = var.lambda_name
     Organization = "dydxprotocol"
+    DeploymentTime = timestamp()
   }
 
   depends_on = [aws_s3_object.lambda_zip]
