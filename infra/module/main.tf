@@ -56,6 +56,8 @@ resource "aws_lambda_function" "lambda" {
   s3_bucket = aws_s3_bucket.bucket.id
   s3_key    = aws_s3_object.lambda_zip.key
 
+  source_code_hash = aws_s3_object.lambda_zip.etag
+
   environment {
     variables = {
       REGION       = var.region
@@ -71,10 +73,7 @@ resource "aws_lambda_function" "lambda" {
   tags = {
     Name         = var.lambda_name
     Organization = "dydxprotocol"
-    DeploymentTime = timestamp()
   }
-
-  depends_on = [aws_s3_object.lambda_zip]
 }
 
 resource "aws_cloudwatch_event_rule" "every_five_minutes" {
