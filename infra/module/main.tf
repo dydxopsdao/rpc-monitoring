@@ -34,24 +34,11 @@ resource "aws_s3_bucket_versioning" "bucket" {
   }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "bucket" {
-  bucket = aws_s3_bucket.bucket.id
-
-  rule {
-    id     = "cleanup-old-versions"
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_object" "lambda_zip" {
   bucket = aws_s3_bucket.bucket.id
   key    = "rpc_monitor.zip"
   source = "${path.module}/../../rpc_monitor/rpc_monitor.zip"
   etag   = filemd5("${path.module}/../../rpc_monitor/rpc_monitor.zip")
-
-  depends_on = [
-    aws_s3_bucket_lifecycle_configuration.bucket
-  ]
 }
 
 resource "aws_lambda_function" "lambda" {
