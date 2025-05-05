@@ -38,7 +38,6 @@ resource "aws_s3_object" "lambda_zip" {
   bucket = aws_s3_bucket.bucket.id
   key    = "rpc_monitor.zip"
   source = "${path.module}/../../rpc_monitor/rpc_monitor.zip"
-  etag   = filemd5("${path.module}/../../rpc_monitor/rpc_monitor.zip")
 }
 
 resource "aws_lambda_function" "lambda" {
@@ -56,7 +55,7 @@ resource "aws_lambda_function" "lambda" {
   s3_bucket = aws_s3_bucket.bucket.id
   s3_key    = aws_s3_object.lambda_zip.key
 
-  source_code_hash = aws_s3_object.lambda_zip.etag
+  source_code_hash = filebase64sha256("${path.module}/../../rpc_monitor/rpc_monitor.zip")
 
   environment {
     variables = {
