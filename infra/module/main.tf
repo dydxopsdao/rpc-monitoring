@@ -93,7 +93,7 @@ resource "aws_cloudwatch_event_rule" "every_five_minutes" {
   name                = var.event_rule_name
   description         = "Triggers the Lambda function every 5 minutes in ${var.region}"
   schedule_expression = "rate(5 minutes)"
-  is_enabled = true
+  state = "ENABLED"
 }
 
 resource "aws_cloudwatch_event_target" "lambda" {
