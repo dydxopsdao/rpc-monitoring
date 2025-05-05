@@ -19,22 +19,24 @@ terraform {
 
   required_version = "~> 1.10.3"
 }
+
 provider "aws" {
-  region              = "ap-northeast-1"
-}
-provider "aws" {
-  alias               = "frankfurt"
-  region              = var.frankfurt_region
+  region = "ap-northeast-1"
 }
 
 provider "aws" {
-  alias               = "tokyo"
-  region              = var.tokyo_region
+  alias  = "frankfurt"
+  region = var.frankfurt_region
+}
+
+provider "aws" {
+  alias  = "tokyo"
+  region = var.tokyo_region
 }
 
 module "frankfurt" {
   source = "./module"
-  
+
   providers = {
     aws = aws.frankfurt
   }
@@ -45,9 +47,7 @@ module "frankfurt" {
   lambda_layer_arn = var.frankfurt_lambda_layer_arn
   event_rule_name  = var.frankfurt_event_rule_name
   datadog_api_key  = var.datadog_api_key
-  lambda_role_arn  = aws_iam_role.lambda_exec_role.arn
-
-  depends_on = [aws_iam_role.lambda_exec_role]
+  lambda_role_arn  = data.aws_iam_role.lambda_exec_role.arn
 }
 
 module "tokyo" {
@@ -63,7 +63,5 @@ module "tokyo" {
   lambda_layer_arn = var.tokyo_lambda_layer_arn
   event_rule_name  = var.tokyo_event_rule_name
   datadog_api_key  = var.datadog_api_key
-  lambda_role_arn  = aws_iam_role.lambda_exec_role.arn
-
-  depends_on = [aws_iam_role.lambda_exec_role]
+  lambda_role_arn  = data.aws_iam_role.lambda_exec_role.arn
 }
