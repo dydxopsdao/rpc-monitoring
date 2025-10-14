@@ -6,7 +6,8 @@ const PROVIDERS = {
     "dydx-ops-rpc.kingnodes.com": "kingnodes",
     "dydx-dao-rpc.polkachu.com": "polkachu",
     "dydx-dao-rpc-new.polkachu.com": "polkachu-experimental",
-    "dydx-dao-rpc.enigma-validator.com": "enigma"
+    "dydx-dao-rpc.enigma-validator.com": "enigma",
+    "https://oegs.dydx.trade": "oegs"
 };
 
 async function pingProviders() {
