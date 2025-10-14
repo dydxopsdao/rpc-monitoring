@@ -1,13 +1,22 @@
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
 const axios = require('axios');
 
 const PROVIDERS = {
     "dydx-ops-rpc.kingnodes.com": "kingnodes",
     "dydx-dao-rpc.polkachu.com": "polkachu",
+    "dydx-dao-rpc-new.polkachu.com": "polkachu-experimental",
     "dydx-dao-rpc.enigma-validator.com": "enigma",
     "oegs.dydx.trade": "oegs"
 };
+
+async function getChromium() {
+    const m = await import('@sparticuz/chromium');
+    return m.default ?? m;
+}
+
+async function getPuppeteer() {
+    const m = await import('puppeteer-core');
+    return m.default ?? m;
+}
 
 async function pingProviders() {
     console.log(`[${new Date().toISOString()}] Starting pingProviders`);
@@ -38,7 +47,7 @@ async function pingProviders() {
             console.error(`[${new Date().toISOString()}] Error pinging provider ${providerName}:`, err.message);
             
             // Log error to datadog on ping failure
-              await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'ping_error', null, null, null, null, null, null);
+            await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'ping_error', null, null, null, null, null, null);
         }
     }
 
@@ -46,15 +55,17 @@ async function pingProviders() {
     return { latencies, blockHeights };
 }
 
-
 async function checkRPCProvider() {
     let browser;
     console.log(`[${new Date().toISOString()}] Starting checkRPCProvider`);
     try {
+        const chromium = await getChromium();
+        const puppeteer = await getPuppeteer();
+
         browser = await puppeteer.launch({
             args: chromium.args,
             executablePath: await chromium.executablePath(),
-            headless: true, // Always true for Lambda
+            headless: true,
             ignoreHTTPSErrors: true,
         });
 
@@ -86,29 +97,27 @@ async function checkRPCProvider() {
         let maxRequests = 0;
 
         for (const [providerName, timestamps] of Object.entries(requestCounts)) {
-             const requestCount = timestamps.length;
+            const requestCount = timestamps.length;
             console.log(`[${new Date().toISOString()}] Provider ${providerName} made ${requestCount} requests`);
-             if (requestCount > maxRequests) {
+            if (requestCount > maxRequests) {
                 maxRequests = requestCount;
                 rpcProviderFound = providerName;
-             } else if (requestCount === maxRequests && requestCount > 0) {
-             // If there is a tie, check the timestamps of the requests.
-                 const existingProviderTimestamps = requestCounts[rpcProviderFound] || [];
-            if (timestamps.length > 0 && existingProviderTimestamps.length > 0){
-                const lastTimestampNew = Math.max(...timestamps);
-                const lastTimestampExisting = Math.max(...existingProviderTimestamps);
-                if (lastTimestampNew > lastTimestampExisting) {
-                 rpcProviderFound = providerName;
+            } else if (requestCount === maxRequests && requestCount > 0) {
+                const existingProviderTimestamps = requestCounts[rpcProviderFound] || [];
+                if (timestamps.length > 0 && existingProviderTimestamps.length > 0){
+                    const lastTimestampNew = Math.max(...timestamps);
+                    const lastTimestampExisting = Math.max(...existingProviderTimestamps);
+                    if (lastTimestampNew > lastTimestampExisting) {
+                        rpcProviderFound = providerName;
+                    }
                 }
             }
-           }
         }
         console.log(`[${new Date().toISOString()}] Detected RPC Provider: ${rpcProviderFound}`);
         return { rpcProviderFound, requestCounts };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in checkRPCProvider:`, error);
-         // Log error to datadog on puppeteer failure
-         await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'puppeteer_error', null, null, null, null, null, null)
+        await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'puppeteer_error', null, null, null, null, null, null)
         throw error;
     } finally {
         if (browser) {
@@ -127,10 +136,10 @@ async function logToDatadog(message, level, region, source, provider, latency_ms
                 ddsource: source,
                 ddtags: `env:prod,region:${region}`,
                 region: region,
-                 provider: provider,
+                provider: provider,
                 latency_ms: latency_ms,
                 latencies: latencies,
-                 block_heights: block_heights,
+                block_heights: block_heights,
                 request_counts: request_counts,
                 requestId: requestId
             },
@@ -146,8 +155,6 @@ async function logToDatadog(message, level, region, source, provider, latency_ms
    }
 }
 
-
-
 exports.handler = async function (event) {
     const region = process.env.AWS_REGION || 'unknown';
     const requestId = event?.requestContext?.requestId || 'unknown';
@@ -161,21 +168,21 @@ exports.handler = async function (event) {
         const { rpcProviderFound, requestCounts } = await checkRPCProvider();
         const detectedLatency = latencies[rpcProviderFound] || 'unknown';
         
-         const requestCountsForLog = {};
-         for (const [providerName, timestamps] of Object.entries(requestCounts)) {
+        const requestCountsForLog = {};
+        for (const [providerName, timestamps] of Object.entries(requestCounts)) {
             requestCountsForLog[providerName] = timestamps.length;
-         }
+        }
 
         console.log(`[${new Date().toISOString()}] Region: ${region}, Detected RPC Provider: ${rpcProviderFound}, latency: ${detectedLatency}ms`);
          
-       
-          await logToDatadog(`Region: ${region}, RPC provider: ${rpcProviderFound}, latency: ${detectedLatency}ms, latencies: ${JSON.stringify(latencies)}, block heights: ${JSON.stringify(blockHeights)}, request_counts: ${JSON.stringify(requestCountsForLog)}`,
-                'info', region, "custom-checker", rpcProviderFound, detectedLatency, latencies, blockHeights, requestCountsForLog, requestId);
+        await logToDatadog(
+            `Region: ${region}, RPC provider: ${rpcProviderFound}, latency: ${detectedLatency}ms, latencies: ${JSON.stringify(latencies)}, block heights: ${JSON.stringify(blockHeights)}, request_counts: ${JSON.stringify(requestCountsForLog)}`,
+            'info', region, "custom-checker", rpcProviderFound, detectedLatency, latencies, blockHeights, requestCountsForLog, requestId
+        );
 
         return { status: "success" };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in handler:`, error);
-        // Log error to datadog on lambda failure
         await logToDatadog(`Error in handler: ${error.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'lambda_error', null, null, null, null, null, requestId);
         return { status: 'error', message: error.message };
     }
