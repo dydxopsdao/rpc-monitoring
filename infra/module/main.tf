@@ -42,7 +42,7 @@ resource "aws_s3_object" "lambda_zip" {
 
 resource "aws_lambda_function" "lambda" {
   function_name = var.lambda_name
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs22.x"
   handler       = "check_rpc.handler"
   role          = var.lambda_role_arn
 
