@@ -3,7 +3,6 @@ const axios = require('axios');
 const PROVIDERS = {
     "dydx-ops-rpc.kingnodes.com": "kingnodes",
     "dydx-dao-rpc.polkachu.com": "polkachu",
-    "dydx-dao-rpc-new.polkachu.com": "polkachu-experimental",
     "dydx-dao-rpc.enigma-validator.com": "enigma",
     "oegs.dydx.trade": "oegs"
 };
@@ -47,7 +46,7 @@ async function pingProviders() {
             console.error(`[${new Date().toISOString()}] Error pinging provider ${providerName}:`, err.message);
             
             // Log error to datadog on ping failure
-            await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'ping_error', null, null, null, null, null, null);
+            await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, null);
         }
     }
 
@@ -117,7 +116,7 @@ async function checkRPCProvider() {
         return { rpcProviderFound, requestCounts };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in checkRPCProvider:`, error);
-        await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'puppeteer_error', null, null, null, null, null, null)
+        await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, null)
         throw error;
     } finally {
         if (browser) {
@@ -133,6 +132,7 @@ async function logToDatadog(message, level, region, source, provider, latency_ms
             'https://http-intake.logs.ap1.datadoghq.com/v1/input',
             {
                 message: message,
+                status: level,
                 ddsource: source,
                 ddtags: `env:prod,region:${region}`,
                 region: region,
@@ -183,7 +183,7 @@ exports.handler = async function (event) {
         return { status: "success" };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in handler:`, error);
-        await logToDatadog(`Error in handler: ${error.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'lambda_error', null, null, null, null, null, requestId);
+        await logToDatadog(`Error in handler: ${error.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, requestId);
         return { status: 'error', message: error.message };
     }
 };
