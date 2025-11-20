@@ -46,7 +46,7 @@ async function pingProviders() {
             console.error(`[${new Date().toISOString()}] Error pinging provider ${providerName}:`, err.message);
             
             // Log error to datadog on ping failure
-            await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, null);
+            await logToDatadog(`Error pinging provider ${providerName}: ${err.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'rpc-monitor', null, null, null, null, null, null);
         }
     }
 
@@ -116,7 +116,7 @@ async function checkRPCProvider() {
         return { rpcProviderFound, requestCounts };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in checkRPCProvider:`, error);
-        await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, null)
+        await logToDatadog(`Error in checkRPCProvider: ${error.message}`, 'error', process.env.AWS_REGION || 'unknown', 'rpc-monitor', null, null, null, null, null, null)
         throw error;
     } finally {
         if (browser) {
@@ -177,13 +177,13 @@ exports.handler = async function (event) {
          
         await logToDatadog(
             `Region: ${region}, RPC provider: ${rpcProviderFound}, latency: ${detectedLatency}ms, latencies: ${JSON.stringify(latencies)}, block heights: ${JSON.stringify(blockHeights)}, request_counts: ${JSON.stringify(requestCountsForLog)}`,
-            'info', region, "custom-checker", rpcProviderFound, detectedLatency, latencies, blockHeights, requestCountsForLog, requestId
+            'info', region, "rpc-monitor", rpcProviderFound, detectedLatency, latencies, blockHeights, requestCountsForLog, requestId
         );
 
         return { status: "success" };
     } catch (error) {
         console.error(`[${new Date().toISOString()}] Error in handler:`, error);
-        await logToDatadog(`Error in handler: ${error.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'custom-checker', null, null, null, null, null, requestId);
+        await logToDatadog(`Error in handler: ${error.message}`, 'error',  process.env.AWS_REGION || 'unknown', 'rpc-monitor', null, null, null, null, null, requestId);
         return { status: 'error', message: error.message };
     }
 };
