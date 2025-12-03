@@ -4,7 +4,8 @@ const PROVIDERS = {
     "dydx-ops-rpc.kingnodes.com": "kingnodes",
     "dydx-dao-rpc.polkachu.com": "polkachu",
     "dydx-dao-rpc.enigma-validator.com": "enigma",
-    "oegs.dydx.trade": "oegs"
+    "oegs.dydx.trade": "oegs",
+    "oegs-baremetal.dydx.trade": "oegs-baremetal"
 };
 
 async function getChromium() {
