@@ -5,7 +5,6 @@ const PROVIDERS = {
     "dydx-dao-rpc.polkachu.com": "polkachu",
     "dydx-dao-rpc.enigma-validator.com": "enigma",
     "oegs.dydx.trade": "oegs",
-    "oegs-baremetal.dydx.trade": "oegs-baremetal"
 };
 
 async function getChromium() {
